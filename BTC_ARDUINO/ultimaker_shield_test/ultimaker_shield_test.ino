@@ -23,15 +23,16 @@ int heater1=2;
 int heater2=3;
 int heater3=4;
 int heater4=7;
-/*
-int dirPin =22;
-int stepperPin =23;
-int enable =24 ;
 
-int dirPin =2;
-int stepperPin =4;
-int enable =3 ;
-*/
+// MOTOR SPEED
+int motorSpeed = 400;
+int motorSpeedMIN = 5;
+int motorSpeedMAX = 800;
+
+// SERIAL TRANSMISSION
+char receivedChar;
+boolean newData = false;
+
 void setup() 
 {
  pinMode(xdirPin, OUTPUT);
@@ -64,8 +65,12 @@ void setup()
  pinMode(heater2, OUTPUT);
   pinMode(heater3, OUTPUT);
   digitalWrite(heater4, OUTPUT);
+  
+    //Serial
+  Serial.begin(9600);
 }
- void step(boolean dir,int steps)
+
+void step(boolean dir,int steps, int delaySpeed)
  {
  digitalWrite(xdirPin,dir);
  digitalWrite(ydirPin,dir);
@@ -78,28 +83,51 @@ void setup()
  digitalWrite(heater3,dir);
  digitalWrite(heater4,dir);
 
- delay(50);
+ //delay(50);
  for(int i=0;i<steps;i++){
    digitalWrite(xstepperPin, HIGH);
    digitalWrite(ystepperPin, HIGH);
    digitalWrite(zstepperPin, HIGH);
    digitalWrite(estepperPin, HIGH);
    digitalWrite(astepperPin, HIGH);
-   delayMicroseconds(800);
+  delayMicroseconds(delaySpeed);
   digitalWrite(xstepperPin, LOW);
   digitalWrite(ystepperPin, LOW);
   digitalWrite(zstepperPin, LOW);
   digitalWrite(estepperPin, LOW); 
   digitalWrite(astepperPin, LOW);
-   delayMicroseconds(800);
+  delayMicroseconds(delaySpeed);
  }
 }
-void loop()
-{
- // digitalWrite(enable, LOW);
- step(true,3200);
- delay(500);
-step(false,3200);
- delay(500);
-     
+
+void loop() {
+   recvOneChar();
+   setMotorSpeed();
+   
+   Serial.println(motorSpeed);     // new for this version
+ 
+   step(true, 10, motorSpeed);
+}
+
+void recvOneChar() {
+    if (Serial.available() > 0) {
+        receivedChar = Serial.read();
+        newData = true;
+    }
+}
+
+void setMotorSpeed() {
+    if (newData == true) {
+      //Serial.println(receivedChar);
+        
+        if(receivedChar == '<') {
+         motorSpeed -= 5; 
+        }        
+        if(receivedChar == '>') {
+         motorSpeed += 5; 
+        }
+        motorSpeed = constrain(motorSpeed, motorSpeedMIN, motorSpeedMAX);     
+        
+        newData = false;
+    }
 }

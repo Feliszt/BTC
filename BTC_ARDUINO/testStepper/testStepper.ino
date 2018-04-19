@@ -1,42 +1,54 @@
-/* 
- Stepper Motor Control - one step at a time
- 
- This program drives a unipolar or bipolar stepper motor. 
- The motor is attached to digital pins 8 - 11 of the Arduino.
- 
- The motor will step one step at a time, very slowly.  You can use this to
- test that you've got the four wires of your stepper wired to the correct
- pins. If wired correctly, all steps should be in the same direction.
- 
- Use this also to count the number of steps per revolution of your motor,
- if you don't know it.  Then plug that number into the oneRevolution
- example to see if you got it right.
- 
- Created 30 Nov. 2009
- by Tom Igoe
- 
- */
+// testing a stepper motor with a Pololu A4988 driver board or equivalent
+// on an Uno the onboard led will flash with each step
+// this version uses delay() to manage timing
 
-#include <Stepper.h>
+byte directionPin = 23;
+byte stepPin = 25;
+int numberOfSteps = 100;
+//byte ledPin = 13;
+int pulseWidthMicros = 20;  // microseconds
+int millisbetweenSteps = 250; // milliseconds - or try 1000 for slower steps
 
-const int stepsPerRevolution = 200;  // change this to fit the number of steps per revolution
-                                     // for your motor
 
-// initialize the stepper library on pins 8 through 11:
-Stepper myStepper(stepsPerRevolution, 25, 27);            
+void setup() { 
 
-int stepCount = 0;         // number of steps the motor has taken
-
-void setup() {
-  // initialize the serial port:
   Serial.begin(9600);
+  Serial.println("Starting StepperTest");
+//  digitalWrite(ledPin, LOW);
+  
+  delay(2000);
+
+  pinMode(directionPin, OUTPUT);
+  pinMode(stepPin, OUTPUT);
+  //pinMode(ledPin, OUTPUT);
+  
+ 
+  digitalWrite(directionPin, HIGH);
+  for(int n = 0; n < numberOfSteps; n++) {
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(pulseWidthMicros); // this line is probably unnecessary
+    digitalWrite(stepPin, LOW);
+    
+    delay(millisbetweenSteps);
+    
+    //digitalWrite(ledPin, !digitalRead(ledPin));
+  }
+  
+  delay(3000);
+  
+
+  digitalWrite(directionPin, LOW);
+  for(int n = 0; n < numberOfSteps; n++) {
+    digitalWrite(stepPin, HIGH);
+    // delayMicroseconds(pulseWidthMicros); // probably not needed
+    digitalWrite(stepPin, LOW);
+    
+    delay(millisbetweenSteps);
+    
+    //digitalWrite(ledPin, !digitalRead(ledPin));
+  }
 }
 
 void loop() {
-  // step one step:
-  myStepper.step(1);
-  Serial.print("steps:" );
-  Serial.println(stepCount);
-  stepCount++;
-  delay(500);
+  
 }
