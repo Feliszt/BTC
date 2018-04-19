@@ -5,44 +5,58 @@ class LiveSection extends Section {
   PFont monoSpaceBold, monoSpace;
   int contentCol, timeCol, bgCol;
   
+  String firstColumn = "Heure";
+  String secondColumn = "Valeur (BTC)";
+  float secondColumnW;
+  String thirdColumn = "Valeur (EUR)";
+  float thirdColumnW;
+  
   LiveSection(String _title, float _borderW, float _borderH, float _sectionX, float _sectionY, float _sectionW, float _sectionH, HashMap _palette, HashMap _fonts) {
       super( _title,_borderW, _borderH,  _sectionX, _sectionY, _sectionW, _sectionH, _palette, _fonts);
       
       monoSpaceBold = fonts.get("monoSpaceBold");
       monoSpace = fonts.get("monoSpace");
-      contentCol = palette.get("content");
-      timeCol = palette.get("header");
+      //contentCol = palette.get("content");
+      contentCol = palette.get("text");
+      timeCol = palette.get("text");
       bgCol = palette.get("background");
+      
+      // set column widths
+      textFont(titleFont);
+      textSize(regTxtSz);
+      secondColumnW = textWidth(secondColumn) / 2;
+      thirdColumnW = textWidth(thirdColumn);
+      
   }
   
   void show() {
      super.show();
      
      // display legend
-     float posY = borderH + startContentY - 17;
-     float posX = sectionX + borderW;
      textFont(titleFont);
-     textSize(10);
-     text("Heure", posX, posY);
-     posX += 500;      
-     text("Valeur (BTC)", posX, posY);
-     posX += 380;      
-     text("Valeur (EUR)", posX, posY);
+     textSize(regTxtSz);
+     float posY = startContentY + textAscent();
+     float posX = startContentX;
+     text(firstColumn, posX, posY);
+     posX = startContentX + contentW / 2 - secondColumnW;      
+     text(secondColumn, posX, posY);
+     posX = startContentX + contentW  - thirdColumnW;      
+     text(thirdColumn, posX, posY);
      
-     // display transaction
-    
-    textFont(monoSpaceBold);
-    posY += textAscent() + 20;
+     // display transaction    
+    posY += textAscent() + borderH;
     for(int i = trans.size() - 1; i >= 0 ; i--) {
-     trans.get(i).show(sectionX + borderW, posY, contentCol, timeCol, bgCol, monoSpaceBold, monoSpace);
-     posY += textAscent() + 20;
+     if(posY < startContentY + contentH) {  
+       trans.get(i).show(startContentX, posY, startContentX + contentW / 2 + secondColumnW, posX + thirdColumnW, contentCol, timeCol, bgCol, monoSpaceBold, monoSpace);
+       posY += textAscent() + borderH * 0.7;
+     }     
     }
    
   }
   
   void addTrans(Transaction newTrans) {
     trans.add(newTrans);
-    if(trans.size() > 13){
+    if(trans.size() > 20){
       trans.remove(0); 
     }
   }  
@@ -52,36 +66,35 @@ class Transaction {
    String time;
    String valueBTC;
    String valueEUR;
+   int numberSz;
    
    Transaction(String _time, String _valueBTC, String _valueEUR) {
     time = _time;
     valueBTC = _valueBTC;
     valueEUR = _valueEUR;
+    
+    numberSz = (int) map(height, 0, 1080, 8, 24);
    }
    
-   void show(float posX, float posY, int contentCol, int timeCol, int bgCol, PFont valueFont, PFont timeFont) {
-      // init stuff
-      float x = posX;      
-      
+   void show(float posX, float posY, float posX2, float posX3, int contentCol, int timeCol, int bgCol, PFont valueFont, PFont timeFont) {     
       // draw time
       textFont(timeFont);
+      textSize(numberSz);  
       fill(timeCol);
-      text(time, x, posY);
-      x += 430;
+      text(time, posX, posY);
       
       // draw BTC value of transaction
       textFont(valueFont);
-      //fill(contentCol);
-      text(valueBTC, x, posY);
-      x += 410;
+      textSize(numberSz);
+      text(valueBTC, posX2 - textWidth(valueBTC), posY); 
       
       // draw EUR value of transaction
       fill(contentCol);
-      text(valueEUR, x, posY);
+      text(valueEUR, posX3 - textWidth(valueEUR), posY);
       
       // draw line
       stroke(bgCol);
-      line(posX, posY - textAscent() - 5, posX + x + 80, posY - textAscent() - 5);
+      line(posX, posY - textAscent() - 5, posX3, posY - textAscent() - 5);
       noStroke();
    }  
 }

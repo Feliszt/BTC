@@ -54,13 +54,13 @@ class ProgSection extends Section {
     // show progress
     fill(txtCol);
     textFont(txtFont);
-    textSize(12);
+    textSize(regTxtSz);
     String str = nf(counter * 100, 2, -1) + " %";
     float posX1 = posImageX + counter * btcLogo.width;
     float posX2 = posX1 - textWidth(str) / 2;
     float posY = startContentY + textAscent();
     textFont(txtFont);
-    textSize(12);
+    textSize(regTxtSz);
     text(str, posX2, posY);
     for (int i = 0; i < 2; i++) {
       ellipse(posX1, posY + 10 * (i + 1), 2, 2);

@@ -6,16 +6,12 @@ import netP5.*;
 OscP5 oscP5;
 int localhostadress = 8000;
 
-// BTC //
-String priceEUR;
-String transTime, transValueBTC, transValueEUR;
-ArrayList<Transaction> trans = new ArrayList<Transaction>();
-
 // FONTS //
 HashMap<String, PFont> fonts = new HashMap<String, PFont>();
 PFont sanFranReg, sanFranSemiBold, sanFranBold, sanFranHeavy, monoSpaceNumbers;
 
 // LAYOUT //
+int bigTitleSz;
 float borderW, borderH;
 float headerH;
 LiveSection liveSect;
@@ -32,7 +28,7 @@ void setup() {
   oscP5 = new OscP5(this, localhostadress) ;   // connect to OSC channel
 
   // window
-  //size(1000, 560);
+  //size(1400, 1000);
   fullScreen();
 
   // canvas
@@ -50,7 +46,11 @@ void draw() {
   // TITLE
   fill(palette.get("header"));
   textFont(fonts.get("sanFranHeavy"));
-  text("BTC", borderH, borderH + textAscent() + 10);
+  textSize(bigTitleSz);
+  //ellipse(borderW, borderH + textAscent(), 10, 10);
+  text("BTC", borderW, borderH + textAscent());
+  
+  //text("BTC", borderW, borderH);
 
   // SECTION 
   for (int i = 0; i < sections.size(); i++) {
@@ -104,14 +104,23 @@ void setupCanvas() {
   palette.put("box", #F9F9F9);
   palette.put("text", #17203A);
   palette.put("content", #A13030);
+  /*
+  palette.put("header", #F8F0FB);
+  palette.put("background", #070707);
+  palette.put("box", #1A1A1A);
+  palette.put("text", #F8F0FB);
+  palette.put("content", #F8F0FB);
+  */
 
   // set borders
   borderW = 0.02 * width;
   borderH = 0.03 * height;
+  bigTitleSz = (int) map(height, 10, 1080, 12, 56);
+  
 
   // set sizes and positions
   // header
-  float headerSz = 0.12;
+  float headerSz = 0.1;
   headerH = headerSz * height;
   float rem = 1 - 3 * borderH / height - headerSz;
   float liveSecH = rem * 0.75;
@@ -146,7 +155,7 @@ void setupCanvas() {
     borderW, 
     borderH, 
     borderW + 0.564 * width + borderW, 
-    headerH + borderH, 
+    headerH + borderH + graphSecH * height + borderH, 
     0.376 * width, 
     graphSecH * height, 
     palette, fonts);
@@ -157,7 +166,7 @@ void setupCanvas() {
     borderW, 
     borderH, 
     borderW + 0.564 * width + borderW, 
-    headerH + borderH + graphSecH * height + borderH, 
+    headerH + borderH, 
     0.376 * width, 
     progSecH * height, 
     palette, fonts);

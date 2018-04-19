@@ -6,12 +6,11 @@ class GraphSection extends Section {
   // graph
   PFont textFont;
   float minX, maxX, minY, maxY;
-  int titleSz = 12;
-  int labelSz = 10;
   float graphH, graphMinX, graphMinY;
   
   // curve
-  int nbPoints = 100;
+  int nbPoints = 80;
+  int curveW;
   float[] BTCvalues;
   float firstInd, newFirstInd;
   float[] valueX = new float[nbPoints];
@@ -47,10 +46,12 @@ class GraphSection extends Section {
       maxX = startContentX + contentW;
       maxY = startContentY+ contentH;
       
+      curveW = (int) map(height, 0, 1080, 1, 6);
+      
       float padY = map(maxY - minY, 100, 500, 10, 15);
-      textSize(titleSz);
+      textSize(mainTitleSz);
       graphH = maxY - padY - textAscent() - padY;
-      textSize(labelSz);
+      textSize(regTxtSz);
       float maxStringSz = 0;
       for(int i = 0; i < abs.length; i++) {
         if(textWidth(abs[i]) > maxStringSz) maxStringSz = textWidth(abs[i]);
@@ -71,7 +72,7 @@ class GraphSection extends Section {
     
     // draw lines
     textFont(textFont);
-    textSize(labelSz);
+    textSize(regTxtSz);
     fill(txtCol);
     noStroke();
     for(int i = 0; i < abs.length; i++) {
@@ -86,13 +87,14 @@ class GraphSection extends Section {
     // draw
     noFill();
     stroke(contentCol);
-    strokeWeight(6);
+    strokeWeight(curveW);
     beginShape();
     int indInArrayPrev = 0;
     for(int i = 0; i < nbPoints; i++) {
      int indInArray = (int) map(i, 0, nbPoints - 1, firstInd, szJSON - 1);
      if(indInArray != indInArrayPrev) {
        float x = map(indInArray, firstInd, szJSON - 1, graphMinX + 18, maxX);
+       //float x = map(indInArray, firstInd, szJSON - 1, startContentX, maxX);
        float y = map(BTCvalues[indInArray] * 0.81, 0, 15000, graphH, graphMinY);
        valueX[i] *= 0.7;
        valueX[i] += (1 - 0.7) * x;
@@ -106,7 +108,7 @@ class GraphSection extends Section {
     
     // draw title
     textFont(textFont);
-    textSize(titleSz);
+    textSize(mainTitleSz);
     fill(txtCol);
     stroke(txtCol);
     strokeWeight(1);
@@ -116,7 +118,7 @@ class GraphSection extends Section {
     float y = maxY - 6;
     text(label, x, y);
     progressBarW = map(second() % secondToChange, 0, secondToChange-1, 0, labelW);
-    rect(x, y + 3, progressBarW, 3);
+    //rect(x, y + 3, progressBarW, 3);
     
     if(second() % secondToChange == 0 && secondPrev % secondToChange != 0)  {
       changeState(false);

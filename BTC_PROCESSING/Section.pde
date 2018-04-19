@@ -2,7 +2,7 @@ class Section {
  float borderW, borderH, sectionX, sectionY, sectionW, sectionH;
  float startContentX, startContentY, contentW, contentH;
  String title; 
- int mainTitleSz = 14;
+ int mainTitleSz, regTxtSz;
  HashMap<String, Integer> colors;
  int bgCol, txtCol;
  HashMap<String, PFont> fonts;
@@ -28,10 +28,13 @@ class Section {
     textFont(titleFont);
     textSize(mainTitleSz);
     
-    startContentX = sectionX + borderW;
-    startContentY = sectionY + borderH + textAscent() + borderH;
+    startContentX = sectionX + borderW ;
+    startContentY = sectionY + borderH + textAscent() * 0.5 + borderH;
     contentW = sectionW - 2 * borderW;
     contentH = sectionH - (startContentY - sectionY) - borderH;
+    
+    mainTitleSz = (int) map(height, 100, 1080, 5, 14);
+    regTxtSz = (int) map(height, 100, 1080, 4, 12); 
   }
   
   void show() {
