@@ -8,6 +8,10 @@ serialNumber = 9600
 motorSpeedMAX = 1600
 motorSpeedMIN = 100
 
+pressedAPrev = False
+pressedSPrev = False
+pressedRPrev = False
+
 def send_serial(val, id):
     msg = ""
     msg = str(chr(id))+str(chr(val))
@@ -43,13 +47,22 @@ def main():
     motorSpeed = 800      # FAST : 100 - SLOW : 1800
 
     while True:
-        time.sleep(0.05)
-
-        if(keyboard.is_pressed('a')):
+        if(keyboard.is_pressed('a') and not pressedAPrev):
+            print("A PRESSED")
             ser.write('<'.encode())
 
-        if(keyboard.is_pressed('s')):
+        if(keyboard.is_pressed('s') and not pressedSPrev):
+            print("S PRESSED")
             ser.write('>'.encode())
+
+
+        if(keyboard.is_pressed('r') and not pressedRPrev):
+            print("R PRESSED")
+            ser.write('r'.encode())
+
+        pressedAPrev = keyboard.is_pressed('a')
+        pressedSPrev = keyboard.is_pressed('s')
+        pressedRPrev = keyboard.is_pressed('r')
 
 if __name__ == "__main__":
     main()

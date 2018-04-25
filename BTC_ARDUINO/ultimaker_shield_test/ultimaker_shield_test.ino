@@ -27,7 +27,7 @@ int heater4=7;
 // MOTOR SPEED
 int motorSpeed = 400;
 int motorSpeedMIN = 5;
-int motorSpeedMAX = 800;
+int motorSpeedMAX = 1600;
 
 // SERIAL TRANSMISSION
 char receivedChar;
@@ -104,30 +104,11 @@ void loop() {
    recvOneChar();
    setMotorSpeed();
    
-   Serial.println(motorSpeed);     // new for this version
+    // read the sensor value:
+    int sensorReading = analogRead(A8);
+    
+    // map it to a range from 0 to 100:
+    int motorSpeed = map(sensorReading, 0, 1023, 100, 6000);
  
-   step(true, 10, motorSpeed);
-}
-
-void recvOneChar() {
-    if (Serial.available() > 0) {
-        receivedChar = Serial.read();
-        newData = true;
-    }
-}
-
-void setMotorSpeed() {
-    if (newData == true) {
-      //Serial.println(receivedChar);
-        
-        if(receivedChar == '<') {
-         motorSpeed -= 5; 
-        }        
-        if(receivedChar == '>') {
-         motorSpeed += 5; 
-        }
-        motorSpeed = constrain(motorSpeed, motorSpeedMIN, motorSpeedMAX);     
-        
-        newData = false;
-    }
+   step(false, 10, motorSpeed);
 }
