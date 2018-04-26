@@ -14,6 +14,9 @@ from pythonosc import udp_client
 import sys
 import serial
 
+def clamp(val, min_, max_):
+    return min_ if val < min_ else max_ if val > max_ else val
+
 def main():
     # init websocket
     try:
@@ -24,25 +27,20 @@ def main():
         print("Could not connect to blockchain.info")
 
     # Serial connect
-    serialNumber = 9600
-    try:
-        global ser
-        if sys.platform.startswith('darwin'):
-        	ser = serial.Serial('/dev/tty.usbmodem1a151',serialNumber)
-        	print("Serial connected")
-        elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
-        	try:
-        		ser = serial.Serial('/dev/ttyACM0',serialNumber)
-        		print("ACM0")
-        	except :
-        		ser = serial.Serial('/dev/ttyACM1', serialNumber)
-        		print("ACM1")
-
-        else:
-        	ser = None
-    except :
-        print("Impossible to connect to Serial")
-        ser = None
+    serialNumber = 115200
+    global ser
+    if sys.platform.startswith('darwin'):
+    	ser = serial.Serial('/dev/tty.usbmodem1a151',serialNumber)
+    	print("Serial connected")
+    elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+    	try:
+    		ser = serial.Serial('/dev/ttyACM0',serialNumber)
+    		print("ACM0")
+    	except :
+    		ser = serial.Serial('/dev/ttyACM1', serialNumber)
+    		print("ACM1")
+    else:
+    	ser = None
 
     # connect OSC
     parser = argparse.ArgumentParser()
@@ -71,6 +69,14 @@ def main():
     yesterday = yesterday.strftime('%Y-%m-%d')
     btcLastPriceEURfloat = btcLastPriceEURlist[yesterday]
     btcLastPriceEURstr = locale.format("%.2f", btcLastPriceEURfloat, grouping=True)
+
+    # step calculation variables
+    maxStep = 50
+    curveA = -0.096167 * maxStep
+    curveB = 0.4952864
+    curveC = 0.06150178
+    curveD = 1.00857 * maxStep
+    counterStep = 0
 
     # main loop
     while True:
@@ -126,9 +132,6 @@ def main():
             for subdata in data["x"]["out"] :
                 value += subdata["value"]
 
-            # send through serial port
-            ser.write('o'.encode())
-
             # compute values of transaction
             valueBTCfloat = value / satoshi
             valueBTCstr = locale.format("%14.8f", valueBTCfloat, grouping=True)
@@ -160,8 +163,23 @@ def main():
             msg = msg.build()
             oscClient.send(msg)
 
+            # compute steps
+            numSteps = curveD + (curveA - curveD) / (1 + (valueBTCfloat / curveC) ** curveB )
+            numSteps = int(numSteps)
+            numSteps = clamp(numSteps, 1, maxStep)
+            counterStep += numSteps
+
+            # compute when coins are released
+            coinReleased = counterStep * 9 / 3200
+
+            # send through serial port
+            if ser != None:
+                string = "<" + str(numSteps) + ">"
+                ser.write(string.encode())
+
             # print to console for good measure
-            print(transTimestr + '\t' + valueBTCstr + '\t' + valueEURstr) #+ '\t' + str(btcCounter))
+            #print(counterData)
+            print(transTimestr + '\t' + valueBTCstr  + '\t' + valueEURstr + '\t' + str(numSteps) + '\t' + str(counterStep % 355) + '\t' + str(coinReleased)) #+ '\t' + str(btcCounter))
             #print(data)
 
             # update values
