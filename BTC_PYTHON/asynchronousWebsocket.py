@@ -102,34 +102,6 @@ def main():
             transTime = data["x"]["time"]
             officialTime =int(time.time())
 
-            # every ten seconds, fetch bitcoin to euro value
-            if transTime - currTime > 59 :
-                currTime = transTime
-
-            # this happens every minutes
-            if currTime != timePrev :
-                try:
-                    bitstampRes = urlopen(coindeskCurrPrice).read().decode('utf8')
-                except:
-                    print("Could not fetch bitcoin price.")
-                    bitstampRes = None
-
-                if bitstampRes != None:
-                    bitstampData = json.loads(bitstampRes)
-                    btcPriceEURfloat = bitstampData["bpi"]["EUR"]["rate_float"]
-                    btcPriceEURstr = locale.format("%.2f", btcPriceEURfloat, grouping=True)
-                    variation = (btcPriceEURfloat - btcLastPriceEURfloat) / btcLastPriceEURfloat * 100
-                    variationstr = locale.format("%.2f", variation, grouping=True)
-                    print("Price update : ", btcPriceEURstr)
-
-                    # send BTC value message
-                    msg = osc_message_builder.OscMessageBuilder(address = "/priceEUR")
-                    msg.add_arg(btcPriceEURstr)
-                    msg.add_arg(btcLastPriceEURstr)
-                    msg.add_arg(variationstr)
-                    msg = msg.build()
-                    oscClient.send(msg)
-
             # loop through all sub transactions and add up their values
             for subdata in data["x"]["out"] :
                 value += subdata["value"]
@@ -137,22 +109,6 @@ def main():
             # compute values of transaction
             valueBTCfloat = value / satoshi
             valueBTCstr = locale.format("%14.8f", valueBTCfloat, grouping=True)
-            valueEURfloat = valueBTCfloat * btcPriceEURfloat
-            valueEURstr = locale.format("%12.2f", valueEURfloat, grouping=True)
-
-            # update bitcoin counter
-            btcCounter += valueBTCfloat
-            btcCounterRatiofloat = btcCounter / btcCounterLimit
-
-            # we release a coin and restart
-            if(btcCounter >= btcCounterLimit) :
-                btcCounter = 0
-
-            # send counter
-            msg = osc_message_builder.OscMessageBuilder(address = "/btcCounter")
-            msg.add_arg(btcCounterRatiofloat)
-            msg = msg.build()
-            oscClient.send(msg)
 
             # compute human readable time
             transTimestr = datetime.datetime.fromtimestamp(transTime).strftime('%H:%M:%S')
@@ -161,7 +117,6 @@ def main():
             msg = osc_message_builder.OscMessageBuilder(address = "/trans")
             msg.add_arg(transTimestr)
             msg.add_arg(valueBTCstr)
-            msg.add_arg(valueEURstr)
             msg = msg.build()
             oscClient.send(msg)
 
