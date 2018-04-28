@@ -2,7 +2,6 @@
 
 # libraries to fetch data
 from websocket import create_connection
-from urllib.request import Request, urlopen
 import json
 # libraries to process data
 import time
@@ -33,9 +32,6 @@ def main():
             result = None
 
         if result != None:
-            #
-            print("Received transaction")
-
             # parse the data
             data = json.loads(result)
 
@@ -58,12 +54,8 @@ def main():
             transTimestr = datetime.datetime.fromtimestamp(transTime).strftime('%H:%M:%S')
 
             # print to console for good measure
-            print(str(ind) + '\t' + transTimestr + '\t' + str(officialTime - transTime) + '\t' + str(value))
-
-            # test sleep
-            time.sleep(0.5)
-
-            print("Finished processing transaction")
+            #print(str(ind) + '\t' + transTimestr + '\t' + str(officialTime - transTime) + '\t' + str(value))
+            print(data)
 
     ws.close()
 
