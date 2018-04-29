@@ -65,7 +65,7 @@ def connect_osc(ip, port):
 ## -- MAIN PROGRAM
 # init variables
 motorSpeedMax = 500     # micro seconds
-motorSpeedMin = 3000    # micro seconds
+motorSpeedMin = 2000    # micro seconds
 maxStep = 150
 
 # connect serial port

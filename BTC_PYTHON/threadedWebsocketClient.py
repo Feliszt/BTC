@@ -6,6 +6,8 @@ import json
 import time
 import datetime
 import locale
+import os
+import random
 # libraries to send and receive messages
 import argparse
 from pythonosc import osc_message_builder
@@ -43,15 +45,31 @@ def connect_osc(ip, port):
     args = parser.parse_args()
     return udp_client.SimpleUDPClient(args.ip, args.port)
 
+# function that process 1 block from websocket
+def process_block(data):
+    # play sound
+    soundInd = int(random.random() * 11 + 1)
+    soundName = '/home/felix/Music/Samples/Vocal_Eliot_5_V2'
+    commandName = 'aplay -q ' + soundName + '.wav &'
+    #print(commandName)
+    os.system(commandName)
+
+    # send osc message
+    msg = osc_message_builder.OscMessageBuilder(address = "/block")
+    msg = msg.build()
+    oscClient.send(msg)
+
+    # debug
+    print("Received a block")
+
 # function that process 1 message from websocket
-def process_message(message):
-    # parse the data
-    try:
-        data = json.loads(message)
-    except:
-        data = None
-        print("Couldn't load json from websocket message.")
-        return
+def process_trans(data):
+    # play sound
+    soundInd = int(random.random() * 11 + 1)
+    soundName = '/home/felix/Music/Samples/Breath_Eliot_1_V' + str(soundInd)
+    commandName = 'aplay -q ' + soundName + '.wav &'
+    #print(commandName)
+    #os.system(commandName)
 
     # get time
     transTime = data["x"]["time"]
@@ -78,46 +96,60 @@ def process_message(message):
     # compute human readable time
     transTimestr = datetime.datetime.fromtimestamp(transTime).strftime('%H:%M:%S')
 
-    # send counter
-    global oscClient
-    msg = osc_message_builder.OscMessageBuilder(address = "/trans")
-    msg.add_arg(transTimestr)
-    msg.add_arg(valueBTCstr)
-    msg = msg.build()
-    oscClient.send(msg)
+    # compute steps
+    global curveA
+    global curveB
+    global curveC
+    global curveD
+    global maxStep
+    global counterStep
+    numSteps = curveD + (curveA - curveD) / (1 + (valueBTCfloat / curveC) ** curveB )
+    numSteps = int(numSteps)
+    numSteps = clamp(numSteps, 1, maxStep)
+    counterStep += numSteps
+
+    # map to motor speed
+    motorSpeed = int(mapValue(numSteps, 1, maxStep, motorSpeedMin, motorSpeedMax))
+    motorSpeed = clamp(motorSpeed, motorSpeedMax, motorSpeedMin)
 
     # send through serial port
     global ser
     if ser != None:
-        # compute steps
-        global curveA
-        global curveB
-        global curveC
-        global curveD
-        global maxStep
-        global counterStep
-        numSteps = curveD + (curveA - curveD) / (1 + (valueBTCfloat / curveC) ** curveB )
-        numSteps = int(numSteps)
-        numSteps = clamp(numSteps, 1, maxStep)
-        counterStep += numSteps
-
-        # map to motor speed
-        motorSpeed = int(mapValue(numSteps, 1, maxStep, motorSpeedMin, motorSpeedMax))
-        motorSpeed = clamp(motorSpeed, motorSpeedMax, motorSpeedMin)
-
         # write message and send it
         string = "<" + str(numSteps) + "-" + str(motorSpeed) + ">"
         ser.write(string.encode())
-    else:
-        numsteps = 0
+
+    # send counter
+    global oscClient
+    msg = osc_message_builder.OscMessageBuilder(address = "/trans")
+    msg.add_arg(transTimestr)
+    msg.add_arg(numSteps)
+    #msg.add_arg(valueBTCstr)
+    msg = msg.build()
+    oscClient.send(msg)
 
     # print to console for good measure
     print(str(counterTrans) + '\t' + transTimestr + '\t' + str(officialTime - transTime) + '\t' + valueBTCstr + '\t' + str(threading.activeCount()) + '\t' + str(numSteps))
 
 # happens everytime websocket receives something
 def on_message(ws, message):
-    thread = threading.Thread(target=process_message, args=(message,))
-    thread.start()
+    # parse the data
+    try:
+        data = json.loads(message)
+    except:
+        print("Couldn't load json from websocket message.")
+        return
+
+    # get type of message and takes decision
+    messageType = data["op"]
+    if (messageType == "utx") :
+        thread = threading.Thread(target=process_trans, args=(data,))
+        thread.start()
+    elif (messageType == "block") :
+        thread = threading.Thread(target=process_block, args=(data,))
+        thread.start()
+    else :
+        print("Unknown message type.")
 
 # display websocket error
 def on_error(ws, error):
@@ -132,6 +164,7 @@ def on_close(ws):
 # transactions
 def on_open(ws):
     ws.send('{"op" : "unconfirmed_sub"}')
+    ws.send('{"op" : "blocks_sub"}')
     print("Websocket opened.")
 
 ## ------ MAIN PROGRAM
