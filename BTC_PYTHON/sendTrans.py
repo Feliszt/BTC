@@ -19,6 +19,8 @@ def send_transaction(unused_addr):
     global maxStep
     global motorSpeedMax
     global motorSpeedMin
+    global counterTrans
+    counterTrans += 1
     if ser != None:
         # get step number
         numSteps = int(random.random() * maxStep) + 1
@@ -31,7 +33,7 @@ def send_transaction(unused_addr):
         string = "<" + str(numSteps) + "-" + str(motorSpeed) + ">"
         ser.write(string.encode())
 
-        print("Sending transaction of "  + str(numSteps) + " steps with speed " + str(motorSpeed))
+        print(str(counterTrans) + '\t' + str(numSteps) + '\t' + str(motorSpeed))
     else:
         print("Serial port not set up.")
 
@@ -67,9 +69,10 @@ def connect_osc(ip, port):
 motorSpeedMax = 500     # micro seconds
 motorSpeedMin = 2000    # micro seconds
 maxStep = 150
+counterTrans = 0
 
 # connect serial port
-ser = connect_serial(9600)
+ser = connect_serial(115200)
 
 # connect osc
 oscServer = connect_osc("192.168.0.12", 5005)

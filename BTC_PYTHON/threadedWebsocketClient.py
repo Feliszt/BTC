@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # libraries to receive data
 import websocket
 # libraries to process data
@@ -69,7 +71,7 @@ def process_trans(data):
     soundName = '/home/felix/Music/Samples/Breath_Eliot_1_V' + str(soundInd)
     commandName = 'aplay -q ' + soundName + '.wav &'
     #print(commandName)
-    #os.system(commandName)
+    os.system(commandName)
 
     # get time
     transTime = data["x"]["time"]
@@ -107,17 +109,16 @@ def process_trans(data):
     numSteps = int(numSteps)
     numSteps = clamp(numSteps, 1, maxStep)
     counterStep += numSteps
+    coinsReleased = int(counterStep / 178)
 
     # map to motor speed
     motorSpeed = int(mapValue(numSteps, 1, maxStep, motorSpeedMin, motorSpeedMax))
     motorSpeed = clamp(motorSpeed, motorSpeedMax, motorSpeedMin)
 
-    # send through serial port
     global ser
-    if ser != None:
-        # write message and send it
-        string = "<" + str(numSteps) + "-" + str(motorSpeed) + ">"
-        ser.write(string.encode())
+    # write message and send it
+    string = "<" + str(numSteps) + "-" + str(motorSpeed) + ">"
+    #ser.write(string.encode())
 
     # send counter
     global oscClient
@@ -129,7 +130,13 @@ def process_trans(data):
     oscClient.send(msg)
 
     # print to console for good measure
-    print(str(counterTrans) + '\t' + transTimestr + '\t' + str(officialTime - transTime) + '\t' + valueBTCstr + '\t' + str(threading.activeCount()) + '\t' + str(numSteps))
+    print(str(counterTrans) + '\t'
+    + transTimestr + '\t'
+    + str(diffTime) + '\t'
+    + valueBTCstr + '\t'
+    #+ str(threading.activeCount()) + '\t'
+    + str(numSteps) + '\t'
+    + str(counterStep))
 
 # happens everytime websocket receives something
 def on_message(ws, message):
@@ -175,7 +182,7 @@ counterStep = 0
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 
 # connect serial port
-ser = connect_serial(9600)
+ser = connect_serial(115200)
 
 # connect osc
 oscClient = connect_osc("127.0.0.1", 8000)
