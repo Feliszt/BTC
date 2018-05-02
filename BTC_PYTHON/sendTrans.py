@@ -36,7 +36,9 @@ def send_transaction(unused_addr):
         print(str(counterTrans) + '\t' + str(numSteps) + '\t' + str(motorSpeed))
     else:
         print("Serial port not set up.")
-
+        
+def test(unused_addr, args, arg1) :
+    print(arg1)
 
 # connect to serial port
 def connect_serial(serialBaud):
@@ -60,6 +62,7 @@ def connect_osc(ip, port):
 
     dis = dispatcher.Dispatcher()
     dis.map("/sendTrans", send_transaction)
+    dis.map("/test", print)
 
     server = osc_server.ThreadingOSCUDPServer((args.ip, args.port), dis)
     return server
@@ -75,7 +78,7 @@ counterTrans = 0
 ser = connect_serial(115200)
 
 # connect osc
-oscServer = connect_osc("192.168.0.12", 5005)
+oscServer = connect_osc("192.168.0.15", 9000)
 
 oscServer.serve_forever()
 ## -----------------
