@@ -30,7 +30,7 @@ def connect_serial(serialBaud):
     for i in range(0,5):
         serialName = '/dev/ttyACM' + str(i)
         try:
-            ser = serial.Serial(serialName,serialBaud)
+            ser = serial.Serial(serialName,serialBaud, write_timeout = 0)
             print("Connection to " + serialName + " successful")
             break
         except:
@@ -66,6 +66,11 @@ def process_block(data):
 
 # function that process 1 message from websocket
 def process_trans(data):
+    # test
+    if random.random() < 0.0 :
+        print("Fuck this transaction.")
+        return
+    
     # play sound
     soundInd = int(random.random() * 11 + 1)
     soundName = '/home/felix/Music/Samples/Breath_Eliot_1_V' + str(soundInd)
@@ -79,7 +84,10 @@ def process_trans(data):
     diffTime = officialTime - transTime
 
     if diffTime > 4 :
-        print("Transaction too old")
+        print("Transaction too old\t"
+              + str(diffTime) + "\t"
+              + str(threading.activeCount()) + '\t'
+              )
         return
 
     # init variables
@@ -124,9 +132,17 @@ def process_trans(data):
     motorSpeed = clamp(motorSpeed, motorSpeedMax, motorSpeedMin)
 
     global ser
+    global counterBytes
     # write message and send it
-    string = str(numSteps) + "-" + str(motorSpeed) + "-" + str(vibrationMotorStep) + ">"
-    ser.write(string.encode())
+    serialPortMessage = str(numSteps) + "-" + str(motorSpeed) + "-" + str(vibrationMotorStep) + ">"
+    #string = "1>"
+    if ser.in_waiting > 1000 :
+        ser.reset_input_buffer()
+    try :
+        numBytes = ser.write(serialPortMessage.encode())
+    except :
+        print("Couldn't send serial port message.")
+        return
 
     # send counter
     global oscClient
@@ -141,11 +157,10 @@ def process_trans(data):
     print(str(counterTrans) + '\t'
     + transTimestr + '\t'
     + str(diffTime) + '\t'
-    + valueBTCstr + '\t'
+    #+ valueBTCstr + '\t'
     + str(threading.activeCount()) + '\t'
-    + str(numSteps) + '\t'
-    + str(motorSpeed) + '\t'
-    + str(coinsReleased % 9))
+    + serialPortMessage + '\t'
+    )
 
 # happens everytime websocket receives something
 def on_message(ws, message):
@@ -187,12 +202,14 @@ def on_open(ws):
 # init debug variables
 counterTrans = 0
 counterStep = 0
+counterBytes = 0
 
 # set locale
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 
 # connect serial port
-ser = connect_serial(115200)
+ser = connect_serial(9600)
+time.sleep(0.5)
 
 # connect osc
 oscClient = connect_osc("127.0.0.1", 8000)
