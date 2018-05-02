@@ -12,10 +12,10 @@ int motorSpeed1 = 8000;
 int steps1 = 0;
 
 boolean vibrate = false;
-unsigned int previousVibrationMotor = 0;
+unsigned long previousVibrationMotor = 0;
 int vibrationMotor = 10000;
 
-// MTOTOR2
+// MOTOR2
 int dirpin2 = 33;
 int steppin2 = 31;
 unsigned long previousMotorMicros2 = 0;
@@ -24,6 +24,12 @@ int steps2 = 0;
 int numStep = 0;
 int diffStep = 0;
 
+// UPDATE OF MOTOR2's SPEED
+float acceleration = 0.95;
+unsigned long previousSpeedUpdate = 0;
+int speedUpdate = 16;
+
+
 // TIME
 unsigned long currentMicros = 0;
 unsigned long currentMillis = 0;
@@ -31,12 +37,14 @@ unsigned long currentMillis = 0;
 // DEBUG LED
 int ledpin = 2;
 
+// DATA
 const byte numChars = 32;
-char receivedChars[numChars];
-String btcValueString;
-double btcValueFloat;
+char receivedChars[numChars]; // an array to store the received data
 boolean newData = false;
 int counterData = 0;
+int commandStep1 = 0;
+int commandStep2 = 0;
+int commandSpeed = 0;
 
 void setup()
 {
@@ -61,88 +69,79 @@ void loop()
   // get and process data
   receiveData();
   processData();
+  
 
   // get current time
   currentMicros = micros();
   currentMillis = millis();
   
-    
-    /*
-  // step loop for motor 1
-  if(currentMillis - previousVibrationMotor >= vibrationMotor) {
-    vibrate = !vibrate;
-    previousVibrationMotor += vibrationMotor;
-  }
-  
   // step loop for motor 1
   if(currentMicros - previousMotorMicros1 >= motorSpeed1) {
-    if(vibrate) {
+    if(steps1 > 0) {
       doStep(steppin1, dirpin1, false);
-      steps1 += 1;
+      steps1 -= 1;
     }
     previousMotorMicros1 += motorSpeed1;
   }
-  */
   
   // step loop for motor 1
-  //if(currentMicros - previousMotorMicros2 >= motorSpeed2) {
+  if(currentMicros - previousMotorMicros2 >= motorSpeed2) {
     if(steps2 > 0) {
       doStep(steppin2, dirpin2, true);
       steps2 -= 1;
-      delayMicroseconds(motorSpeed2);
+      //delayMicroseconds(motorSpeed2);
     }
-    //previousMotorMicros2 += motorSpeed2;
-  //} 
+    previousMotorMicros2 += motorSpeed2;
+  } 
 }
 
 void receiveData() {
-    static boolean recvInProgress = false;
-    static byte ndx = 0;
-    char startMarker = '<';
-    char endMarker = '>';
-    char seperateMarker = '-';
-    char rc;
-    
-    while (Serial.available() > 0 && newData == false) {
-        rc = Serial.read();
-
-        if (recvInProgress == true) {
-            if (rc != endMarker) {
-                receivedChars[ndx] = rc;
-                ndx++;
-                if (ndx >= numChars) {
-                    ndx = numChars - 1;
-                }
-            }
-            else {
-                receivedChars[ndx] = '\0'; // terminate the string
-                recvInProgress = false;
-                ndx = 0;
-                newData = true;
-            }
-        }
-
-        else if (rc == startMarker ) {
-            recvInProgress = true;
-        }
-
-    }
+ static byte ndx = 0;
+ char endMarker = '>';
+ char rc;
+ 
+ while (Serial.available() > 0 && newData == false) {
+   rc = Serial.read();
+  
+   if (rc != endMarker) {
+     receivedChars[ndx] = rc;
+     ndx++;
+     if (ndx >= numChars) {
+       ndx = numChars - 1;
+     }
+   }
+   else {
+     receivedChars[ndx] = '\0'; // terminate the string
+     ndx = 0;
+     newData = true;
+   }
+ }
 }
 
 void processData() {
     if (newData == true) {
-        numStep = atoi(strtok(receivedChars, "-"));
-        motorSpeed2 = atoi(strtok(NULL, "-"));
-
-        diffStep = numStep - steps2;
+      
+      Serial.println(receivedChars);
+      
+        // process data
+        counterData += 1;
+        commandStep2 = atoi(strtok(receivedChars, "-"));
+        commandSpeed = atoi(strtok(NULL, "-"));
+        commandStep1 = atoi(strtok(NULL, "-"));
+        motorSpeed2 = commandSpeed;
+        
+        //
+        steps1 += commandStep1;
+        
+        // increment steps for coin releasing motor
+        diffStep = commandStep2 - steps2;
         if(diffStep > 0) {
           steps2 += diffStep;
         }
-
-        counterData += 1;
-        newData = false;
-
-        Serial.println("data #" + String(counterData) + " " + String(steps2) + " steps " + String(motorSpeed2) + " speed.");
+        
+        // display
+        //Serial.println(String(counterData) + "\t" + String(commandStep2) + "\t" + String(commandSpeed));
+        newData = false;        
     }
 }
 

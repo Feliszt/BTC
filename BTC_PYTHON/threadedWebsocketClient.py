@@ -71,7 +71,7 @@ def process_trans(data):
     soundName = '/home/felix/Music/Samples/Breath_Eliot_1_V' + str(soundInd)
     commandName = 'aplay -q ' + soundName + '.wav &'
     #print(commandName)
-    os.system(commandName)
+    #os.system(commandName)
 
     # get time
     transTime = data["x"]["time"]
@@ -105,11 +105,19 @@ def process_trans(data):
     global curveD
     global maxStep
     global counterStep
+    global coinReleased0
+    global prevCoinReleased0
     numSteps = curveD + (curveA - curveD) / (1 + (valueBTCfloat / curveC) ** curveB )
     numSteps = int(numSteps)
     numSteps = clamp(numSteps, 1, maxStep)
     counterStep += numSteps
     coinsReleased = int(counterStep / 178)
+    coinReleased0 = coinsReleased % 15 == 0
+    if(coinReleased0 and not prevCoinReleased0):
+        vibrationMotorStep = 50
+    else :
+        vibrationMotorStep = 50
+    prevCoinReleased0 = coinReleased0
 
     # map to motor speed
     motorSpeed = int(mapValue(numSteps, 1, maxStep, motorSpeedMin, motorSpeedMax))
@@ -117,8 +125,8 @@ def process_trans(data):
 
     global ser
     # write message and send it
-    string = "<" + str(numSteps) + "-" + str(motorSpeed) + ">"
-    #ser.write(string.encode())
+    string = str(numSteps) + "-" + str(motorSpeed) + "-" + str(vibrationMotorStep) + ">"
+    ser.write(string.encode())
 
     # send counter
     global oscClient
@@ -134,9 +142,10 @@ def process_trans(data):
     + transTimestr + '\t'
     + str(diffTime) + '\t'
     + valueBTCstr + '\t'
-    #+ str(threading.activeCount()) + '\t'
+    + str(threading.activeCount()) + '\t'
     + str(numSteps) + '\t'
-    + str(counterStep))
+    + str(motorSpeed) + '\t'
+    + str(coinsReleased % 9))
 
 # happens everytime websocket receives something
 def on_message(ws, message):
@@ -178,6 +187,7 @@ def on_open(ws):
 # init debug variables
 counterTrans = 0
 counterStep = 0
+
 # set locale
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 
@@ -187,8 +197,12 @@ ser = connect_serial(115200)
 # connect osc
 oscClient = connect_osc("127.0.0.1", 8000)
 
+# vibration motor variables
+coinReleased0 = False
+prevCoinReleased0 = False
+
 # motor variables
-maxStep = 150
+maxStep = 200
 motorSpeedMax = 500     # micro seconds
 motorSpeedMin = 2500    # micro seconds
 
