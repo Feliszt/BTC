@@ -18,7 +18,7 @@ def main():
     counter = 0
     
     # open file
-    dataFile = open('data/analytics02.txt', 'a')
+    dataFile = open('data/analytics03.txt', 'a')
     
     # main loop
     while True:
@@ -39,6 +39,14 @@ def main():
                 data = json.loads(result)
             except:
                 print("Error with loading json data")
+                ws.close()
+                # init websocket
+                try:
+                    ws = create_connection("wss://ws.blockchain.info/inv")
+                    ws.send('{"op" : "unconfirmed_sub"}')
+                    print("Connection to blockchain.info successful")
+                except:
+                    print("Could not connect to blockchain.info")
                 data = None
                 
             if data != None:    
