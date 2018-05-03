@@ -4,10 +4,21 @@
 import websocket
 import json
 # libraries to process data
+import argparse
+from pythonosc import osc_message_builder
+from pythonosc import udp_client
 import threading
 import time
 import datetime
 import locale
+
+# connect to osc
+def connect_oscClient(ip, port):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--ip", default=ip)
+    parser.add_argument("--port", type=int, default=port)
+    args = parser.parse_args()
+    return udp_client.SimpleUDPClient(args.ip, args.port)
 
 # function that process 1 block from websocket
 def process_block(data):
@@ -43,6 +54,15 @@ def process_trans(data):
 
     # compute human readable time
     transTimestr = datetime.datetime.fromtimestamp(transTime).strftime('%H:%M:%S')
+
+    # send counter
+    global oscClient
+    msg = osc_message_builder.OscMessageBuilder(address = "/trans")
+    msg.add_arg(transTimestr)
+    #msg.add_arg(numSteps)
+    msg.add_arg(valueBTCstr)
+    msg = msg.build()
+    oscClient.send(msg)
 
     # print to console for good measure
     print(
@@ -95,6 +115,9 @@ counterTrans = 0
 
 # set locale
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
+
+# launch osc client
+oscClient = connect_oscClient("127.0.0.1", 8000)
 
 # launch websocket
 #websocket.enableTrace(True)
