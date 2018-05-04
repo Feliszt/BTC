@@ -33,13 +33,30 @@ def connect_serial(serialBaud):
         serialName = '/dev/ttyACM' + str(i)
         try:
             ser = serial.Serial(serialName,serialBaud, write_timeout = 0)
-            print("Connection to " + serialName + " successful")
+            log("Connection to " + serialName + " successful")
             break
         except:
             ser = None
-            print("Can't connect to" + serialName + " trying next.")
+            log("Can't connect to" + serialName + " trying next.")
 
     return ser
+
+# process and send command through serial communication
+def sendMotorCommand(message) :
+    global toggleMotor
+    global ser
+    global numBytes
+    if(toggleMotor) :
+        if ser.in_waiting > 1000 :
+            ser.reset_input_buffer()
+        try :
+            numBytes = ser.write(message.encode())
+        except :
+            log("Couldn't send serial port message.")
+        return
+    #else :
+        #log("Serial communication deactivated.")
+        
 
 # connect to osc
 def connect_oscClient(ip, port):
@@ -47,23 +64,35 @@ def connect_oscClient(ip, port):
     parser.add_argument("--ip", default=ip)
     parser.add_argument("--port", type=int, default=port)
     args = parser.parse_args()
-    return udp_client.SimpleUDPClient(args.ip, args.port)
-
-def restart_socket(unused_addr) :
+    return udp_client.SimpleUDPClient(args.ip, args.port)    
+        
+def launch_websocket_thread(unused_addr):
     global ws
-    global thread0
-    ws.close()
-    #thread0.stop()
-    time.sleep(1)
-    ws = websocket.WebSocketApp("wss://ws.blockchain.info/inv",
-                          on_open = on_open,
-                          on_message = on_message,
-                          on_error = on_error,
-                          on_close = on_close)
-
-    thread0 = threading.Thread(target=mainThread, args=(ws,))
-    thread0.start()
-
+    global websocketOpen
+    if websocketOpen :
+        log("launch_websocket_thread : Websocket already open.")
+    else :        
+        threading.Thread(target=ws.run_forever).start()
+        websocketOpen = True
+        
+def stop_websocket(unused_addr):
+    global ws
+    global websocketOpen
+    if websocketOpen :
+        websocketOpen = False
+        ws.close()
+    else :
+        log("stop_websocket : Websocket already closed")
+        
+def toggle_motor(unused_addr):
+    global toggleMotor
+    toggleMotor = not toggleMotor
+    log("toggle_motor : state = " + str(toggleMotor))
+    
+def launch_vibration(unused_addr) :    
+    global motorSpeedMin
+    sendMotorCommand("0-" + str(motorSpeedMin) + "-50>")
+    
 # launch osc server
 def connect_oscServer(ip, port):
     parser = argparse.ArgumentParser()
@@ -71,8 +100,13 @@ def connect_oscServer(ip, port):
     parser.add_argument("--port", type=int, default=port, help="The port to listen on")
     args = parser.parse_args()
 
+    global ws
+    global toggleMotor
     dis = dispatcher.Dispatcher()
-    dis.map("/restart", restart_socket)
+    dis.map("/closeSocket", stop_websocket)
+    dis.map("/startSocket", launch_websocket_thread)
+    dis.map("/toggleMotors", toggle_motor)
+    dis.map("/vibrate", launch_vibration)
 
     server = osc_server.ThreadingOSCUDPServer((args.ip, args.port), dis)
     return server
@@ -80,11 +114,11 @@ def connect_oscServer(ip, port):
 # function that process 1 block from websocket
 def process_block(data):
     # play sound
-    soundInd = int(random.random() * 11 + 1)
-    soundName = '/home/felix/Music/Samples/Vocal_Eliot_5_V2'
-    commandName = 'aplay -q ' + soundName + '.wav &'
+    #soundInd = int(random.random() * 11 + 1)
+    #soundName = '/home/felix/Music/Samples/Vocal_Eliot_5_V2'
+    #commandName = 'aplay -q ' + soundName + '.wav &'
     #print(commandName)
-    os.system(commandName)
+    #os.system(commandName)
 
     # send osc message
     msg = osc_message_builder.OscMessageBuilder(address = "/block")
@@ -92,19 +126,20 @@ def process_block(data):
     oscClient.send(msg)
 
     # debug
-    print("Received a block")
+    log("Received a block")
+    
+# log to screen and to file
+def log(logString) :
+    print(logString)
+    with open('data/log.txt', 'a') as f :
+        f.write(logString + "\n")
 
 # function that process 1 message from websocket
-def process_trans(data):
-    # test
-    if random.random() < 0.0 :
-        print("Fuck this transaction.")
-        return
-    
+def process_trans(data):    
     # play sound
-    soundInd = int(random.random() * 11 + 1)
-    soundName = '/home/felix/Music/Samples/Breath_Eliot_1_V' + str(soundInd)
-    commandName = 'aplay -q ' + soundName + '.wav &'
+    #soundInd = int(random.random() * 11 + 1)
+    #soundName = '/home/felix/Music/Samples/Breath_Eliot_1_V' + str(soundInd)
+    #commandName = 'aplay -q ' + soundName + '.wav &'
     #print(commandName)
     #os.system(commandName)
 
@@ -114,7 +149,7 @@ def process_trans(data):
     diffTime = officialTime - transTime
 
     if diffTime > 4 :
-        print("Transaction too old\t"
+        log("Transaction too old\t"
               + str(diffTime) + "\t"
               + str(threading.activeCount()) + '\t'
               )
@@ -149,8 +184,8 @@ def process_trans(data):
     numSteps = int(numSteps)
     numSteps = clamp(numSteps, 1, maxStep)
     counterStep += numSteps
-    coinsReleased = int(counterStep / 178)
-    coinReleased0 = coinsReleased % 15 == 0
+    coinsReleased = int(counterStep / 360)
+    coinReleased0 = coinsReleased % 4 == 0
     if(coinReleased0 and not prevCoinReleased0):
         vibrationMotorStep = 0
     else :
@@ -165,26 +200,24 @@ def process_trans(data):
     global counterBytes
     # write message and send it
     serialPortMessage = str(numSteps) + "-" + str(motorSpeed) + "-" + str(vibrationMotorStep) + ">"
-    #string = "1>"
-    if ser.in_waiting > 1000 :
-        ser.reset_input_buffer()
-    try :
-        numBytes = ser.write(serialPortMessage.encode())
-    except :
-        print("Couldn't send serial port message.")
-        return
+    sendMotorCommand(serialPortMessage)
 
     # send counter
     global oscClient
     msg = osc_message_builder.OscMessageBuilder(address = "/trans")
     msg.add_arg(transTimestr)
-    msg.add_arg(numSteps)
-    #msg.add_arg(valueBTCstr)
+    #msg.add_arg(numSteps)
+    msg.add_arg(valueBTCstr)
     msg = msg.build()
     oscClient.send(msg)
 
     # print to console for good measure
-    print(str(counterTrans) + '\t'
+    global toggleMotor
+    app = ""
+    if not toggleMotor :
+        app = "///"
+    log(app
+    + str(counterTrans) + '\t'
     + transTimestr + '\t'
     + str(diffTime) + '\t'
     + valueBTCstr + '\t'
@@ -199,7 +232,7 @@ def on_message(ws, message):
     try:
         data = json.loads(message)
     except:
-        print("Couldn't load json from websocket message.")
+        log("Couldn't load json from websocket message.")
         return
 
     # get type of message and takes decision
@@ -211,18 +244,20 @@ def on_message(ws, message):
         thread = threading.Thread(target=process_block, args=(data,))
         thread.start()
     else :
-        print("Unknown message type.")
-
+        log("Unknown message type.")
+        
 # display websocket error
 def on_error(ws, error):
-    print(error)
+    log(error)
 
 # display message when websocket closed
 def on_close(ws):
-    print("Websocket closed.")
+    global websocketOpen
+    websocketOpen = False
+    log("Websocket closed.")
+    #time.sleep(1)
+    #launch_websocket_thread(ws)
     
-def mainThread(websocket):
-    websocket.run_forever()
 
 # happens on websocket creation
 # send message to blockchain websocket in order to subscribe to unconfirmed
@@ -230,9 +265,13 @@ def mainThread(websocket):
 def on_open(ws):
     ws.send('{"op" : "unconfirmed_sub"}')
     ws.send('{"op" : "blocks_sub"}')
-    print("Websocket opened.")
-
+    log("Websocket opened.")
+        
 ## ------ MAIN PROGRAM
+# start log
+with open('data/log.txt', 'a') as f :
+    f.write("\n############## STARTING LOG ##############\n")
+
 # init debug variables
 counterTrans = 0
 counterStep = 0
@@ -242,13 +281,14 @@ counterBytes = 0
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 
 # vibration motor variables
+toggleMotor = True
 coinReleased0 = False
 prevCoinReleased0 = False
 
 # motor variables
-maxStep = 200
-motorSpeedMax = 500     # micro seconds
-motorSpeedMin = 2500    # micro seconds
+maxStep = 15
+motorSpeedMax = 1000     # micro seconds
+motorSpeedMin = 2000    # micro seconds
 
 # step calculation variables
 curveA = -0.096167 * maxStep
@@ -265,14 +305,13 @@ oscClient = connect_oscClient("127.0.0.1", 8000)
 
 # launch websocket
 #websocket.enableTrace(True)
+websocketOpen = False
 ws = websocket.WebSocketApp("wss://ws.blockchain.info/inv",
                           on_open = on_open,
                           on_message = on_message,
                           on_error = on_error,
                           on_close = on_close)
-
-thread0 = threading.Thread(target=mainThread, args=(ws,))
-thread0.start()
+launch_websocket_thread([])
 
 # launch osc server
 oscServer = connect_oscServer("192.168.0.15", 9000)
