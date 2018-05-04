@@ -56,7 +56,7 @@ def sendMotorCommand(message) :
         return
     #else :
         #log("Serial communication deactivated.")
-        
+
 
 # connect to osc
 def connect_oscClient(ip, port):
@@ -64,8 +64,10 @@ def connect_oscClient(ip, port):
     parser.add_argument("--ip", default=ip)
     parser.add_argument("--port", type=int, default=port)
     args = parser.parse_args()
-    return udp_client.SimpleUDPClient(args.ip, args.port)    
-        
+    return udp_client.SimpleUDPClient(args.ip, args.port)
+
+# function that answers to /startSocket OSC address
+# starts websocket
 def launch_websocket_thread(unused_addr):
     global ws
     global websocketOpen
@@ -74,7 +76,9 @@ def launch_websocket_thread(unused_addr):
     else :        
         threading.Thread(target=ws.run_forever).start()
         websocketOpen = True
-        
+
+# unction that answers to /closeSocket OSC address
+# closes websocket. NOT TO BE USED ! DOESN'T WORK
 def stop_websocket(unused_addr):
     global ws
     global websocketOpen
@@ -83,16 +87,20 @@ def stop_websocket(unused_addr):
         ws.close()
     else :
         log("stop_websocket : Websocket already closed")
-        
+
+# function that answers to /toggleMotors OSC address
+# toggles variable that enable the spinning of the motors
 def toggle_motor(unused_addr):
     global toggleMotor
     toggleMotor = not toggleMotor
     log("toggle_motor : state = " + str(toggleMotor))
-    
-def launch_vibration(unused_addr) :    
+
+# function that answers to /vibrate OSC address
+# sends a message to arduino that tells the vibration motor to spin 50 steps
+def launch_vibration(unused_addr) :
     global motorSpeedMin
     sendMotorCommand("0-" + str(motorSpeedMin) + "-50>")
-    
+
 # launch osc server
 def connect_oscServer(ip, port):
     parser = argparse.ArgumentParser()
@@ -127,7 +135,7 @@ def process_block(data):
 
     # debug
     log("Received a block")
-    
+
 # log to screen and to file
 def log(logString) :
     print(logString)
@@ -135,7 +143,7 @@ def log(logString) :
         f.write(logString + "\n")
 
 # function that process 1 message from websocket
-def process_trans(data):    
+def process_trans(data):
     # play sound
     #soundInd = int(random.random() * 11 + 1)
     #soundName = '/home/felix/Music/Samples/Breath_Eliot_1_V' + str(soundInd)
@@ -223,7 +231,7 @@ def process_trans(data):
     + valueBTCstr + '\t'
     + str(threading.activeCount()) + '\t'
     + serialPortMessage + '\t'
-    + str(coinsReleased) + '\t'          
+    + str(coinsReleased) + '\t'
     )
 
 # happens everytime websocket receives something
@@ -245,7 +253,7 @@ def on_message(ws, message):
         thread.start()
     else :
         log("Unknown message type.")
-        
+
 # display websocket error
 def on_error(ws, error):
     log(error)
@@ -257,7 +265,7 @@ def on_close(ws):
     log("Websocket closed.")
     #time.sleep(1)
     #launch_websocket_thread(ws)
-    
+
 
 # happens on websocket creation
 # send message to blockchain websocket in order to subscribe to unconfirmed
@@ -266,7 +274,7 @@ def on_open(ws):
     ws.send('{"op" : "unconfirmed_sub"}')
     ws.send('{"op" : "blocks_sub"}')
     log("Websocket opened.")
-        
+
 ## ------ MAIN PROGRAM
 # start log
 with open('data/log.txt', 'a') as f :
@@ -317,4 +325,3 @@ launch_websocket_thread([])
 oscServer = connect_oscServer("192.168.0.15", 9000)
 oscServer.serve_forever()
 ## -----------------------
-
