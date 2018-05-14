@@ -73,7 +73,7 @@ def launch_websocket_thread(unused_addr):
     global websocketOpen
     if websocketOpen :
         log("launch_websocket_thread : Websocket already open.")
-    else :        
+    else :
         threading.Thread(target=ws.run_forever).start()
         websocketOpen = True
 
@@ -188,14 +188,16 @@ def process_trans(data):
     global counterStep
     global coinReleased0
     global prevCoinReleased0
+    global freqReleased
     numSteps = curveD + (curveA - curveD) / (1 + (valueBTCfloat / curveC) ** curveB )
     numSteps = int(numSteps)
     numSteps = clamp(numSteps, 1, maxStep)
     counterStep += numSteps
     coinsReleased = int(counterStep / 177)
-    coinReleased0 = coinsReleased % 10 == 0
+    coinReleased0 = coinsReleased % freqReleased == 0
     if(coinReleased0 and not prevCoinReleased0):
         vibrationMotorStep = 300
+        freqReleased = random.randint(5, 10)
     else :
         vibrationMotorStep = 0
     prevCoinReleased0 = coinReleased0
@@ -284,6 +286,7 @@ with open('data/log.txt', 'a') as f :
 counterTrans = 0
 counterStep = 0
 counterBytes = 0
+freqReleased = random.randint(1, 10)
 
 # set locale
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
