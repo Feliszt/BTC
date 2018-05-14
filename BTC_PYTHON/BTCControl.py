@@ -139,7 +139,7 @@ def process_block(data):
 # log to screen and to file
 def log(logString) :
     print(logString)
-    with open('data/log.txt', 'a') as f :
+    with open('data/log2.txt', 'a') as f :
         f.write(logString + "\n")
 
 # function that process 1 message from websocket
@@ -192,10 +192,10 @@ def process_trans(data):
     numSteps = int(numSteps)
     numSteps = clamp(numSteps, 1, maxStep)
     counterStep += numSteps
-    coinsReleased = int(counterStep / 360)
-    coinReleased0 = coinsReleased % 4 == 0
+    coinsReleased = int(counterStep / 177)
+    coinReleased0 = coinsReleased % 10 == 0
     if(coinReleased0 and not prevCoinReleased0):
-        vibrationMotorStep = 0
+        vibrationMotorStep = 300
     else :
         vibrationMotorStep = 0
     prevCoinReleased0 = coinReleased0
@@ -214,7 +214,7 @@ def process_trans(data):
     global oscClient
     msg = osc_message_builder.OscMessageBuilder(address = "/trans")
     msg.add_arg(transTimestr)
-    #msg.add_arg(numSteps)
+    msg.add_arg(numSteps)
     msg.add_arg(valueBTCstr)
     msg = msg.build()
     oscClient.send(msg)
@@ -294,7 +294,7 @@ coinReleased0 = False
 prevCoinReleased0 = False
 
 # motor variables
-maxStep = 15
+maxStep = 20
 motorSpeedMax = 1000     # micro seconds
 motorSpeedMin = 2000    # micro seconds
 
@@ -309,7 +309,7 @@ ser = connect_serial(9600)
 time.sleep(0.5)
 
 # launch osc client
-oscClient = connect_oscClient("127.0.0.1", 8000)
+oscClient = connect_oscClient("192.168.0.12", 8000)
 
 # launch websocket
 #websocket.enableTrace(True)
