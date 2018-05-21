@@ -76,8 +76,8 @@ void setupCanvas() {
   fonts.put("sanFranReg", createFont("fonts/SanFranciscoText-Regular.otf", map(height, 0, 1080, 12, 20)));
   fonts.put("sanFranHeavy", createFont("fonts/SanFranciscoText-Heavy.otf", map(height, 0, 1080, 12, 56)));
   fonts.put("sanFranSemiBold", createFont("fonts/SanFranciscoText-Semibold.otf", map(height, 0, 1080, 0, 24)));
-  fonts.put("monoSpace", createFont("fonts/monaco.ttf", map(height, 0, 1080, 12, 22)));
-  fonts.put("monoSpaceBold", createFont("fonts/NotoMono-Regular.ttf", map(height, 0, 1080, 12, 22)));
+  fonts.put("monoSpace", createFont("fonts/SourceCodePro-Regular.otf", map(height, 0, 1080, 12, 22)));
+  fonts.put("monoSpaceBold", createFont("fonts/SourceCodePro-Regular.otf", map(height, 0, 1080, 12, 22)));
 
   // set palette
   palette.put("header", #010101);        

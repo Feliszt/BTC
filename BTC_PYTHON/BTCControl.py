@@ -93,7 +93,22 @@ def stop_websocket(unused_addr):
 def toggle_motor(unused_addr):
     global toggleMotor
     toggleMotor = not toggleMotor
-    log("toggle_motor : state = " + str(toggleMotor))
+    
+# function that answers to /incrementFreq OSC address
+# adds 1 to freqReleased
+def increment_freq(unused_addr):
+    global freqReleased
+    freqReleased = freqReleased + 1
+    log("increment_freq : freqReleased = " + str(freqReleased))
+    
+# function that answers to /decrementFreq OSC address
+# removes 1 to freqReleased
+def decrement_freq(unused_addr):
+    global freqReleased
+    if freqReleased > 1 :
+        freqReleased = freqReleased - 1
+    log("decrement_freq : freqReleased = " + str(freqReleased))
+
 
 # function that answers to /vibrate OSC address
 # sends a message to arduino that tells the vibration motor to spin 50 steps
@@ -117,6 +132,8 @@ def connect_oscServer(ip, port):
     dis.map("/startSocket", launch_websocket_thread)
     dis.map("/toggleMotors", toggle_motor)
     dis.map("/vibrate", launch_vibration)
+    dis.map("/incrementFreq", increment_freq)
+    dis.map("/decrementFreq", decrement_freq)
 
     server = osc_server.ThreadingOSCUDPServer((args.ip, args.port), dis)
     return server
@@ -202,10 +219,10 @@ def process_trans(data):
         counterVibration += 1
 
     if(counterVibration == freqReleased):
-        vibrationMotorStep = 0
+        vibrationMotorStep = 275
         #vibrationMotorStep = 0
         counterVibration = 0
-        freqReleased = random.randint(6, 8)
+        #freqReleased = random.randint(6, 7)
         #freqReleased = 7
         #freqReleased = 1
     else :
@@ -290,12 +307,6 @@ def on_open(ws):
     ws.send('{"op" : "blocks_sub"}')
     log("Websocket opened.")
 
-def vibrationTime():
-    while True:
-        currentSec = time.time()
-        if(currentSec - previousSec):
-            pass
-
 ## ------ MAIN PROGRAM
 # start log
 with open('data/log.txt', 'a') as f :
@@ -306,7 +317,7 @@ counterTrans = 0
 counterStep = 0
 counterBytes = 0
 counterVibration = 0
-freqReleased = 1
+freqReleased = 5
 
 # set locale
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
@@ -317,7 +328,7 @@ coinReleased = 0
 prevCoinReleased = 0
 
 # motor variables
-maxStep = 50
+maxStep = 15
 motorSpeedMax = 1000     # micro seconds
 motorSpeedMin = 2000    # micro seconds
 
@@ -345,6 +356,6 @@ ws = websocket.WebSocketApp("wss://ws.blockchain.info/inv",
 launch_websocket_thread([])
 
 # launch osc server
-oscServer = connect_oscServer("192.168.0.214", 9000)
+oscServer = connect_oscServer("192.168.0.90", 9000)
 oscServer.serve_forever()
 ## -----------------------

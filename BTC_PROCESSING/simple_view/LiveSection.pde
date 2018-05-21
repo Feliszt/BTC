@@ -37,12 +37,12 @@ class LiveSection extends Section {
      textSize(regTxtSz);
      float posY = startContentY + textAscent();
      float posX = startContentX;
-     text(firstColumn, posX, posY);
+     //text(firstColumn, posX, posY);
      posX = startContentX + contentW / 2 - secondColumnW;      
-     text(secondColumn, posX, posY);
+     //text(secondColumn, posX, posY);
      
     stroke(contentCol);
-    line(startContentX, posY + 0.5 * textAscent(), contentW, posY  + 0.5 * textAscent());
+    //line(startContentX, posY + 0.5 * textAscent(), contentW, posY  + 0.5 * textAscent());
     noStroke();
      /*
      posX = startContentX + contentW  - thirdColumnW;      
@@ -50,11 +50,12 @@ class LiveSection extends Section {
      */
      
      // display transaction    
-    posY += 1.5 * textAscent();
+    //posY += 1.5 * textAscent();
+    posY = height - textAscent();
     for(int i = trans.size() - 1; i >= 0 ; i--) {
-     if(posY < startContentY + contentH) {  
+     if(posY > startContentY) {  
        trans.get(i).show(startContentX, posY, startContentX + contentW / 2 + secondColumnW, posX + thirdColumnW, contentCol, timeCol, bgCol, monoSpace, monoSpace);
-       posY += 1.5 * textAscent();
+       posY -= 1.5 * textAscent();
      }     
     }
    
@@ -91,7 +92,7 @@ class Transaction {
       // draw BTC value of transaction
       textFont(valueFont);
       textSize(numberSz);
-      text(valueBTC, posX2 - textWidth(valueBTC), posY); 
+      text(valueBTC, posX + textWidth(time) + 150  /*- textWidth(valueBTC)*/, posY); 
       
       /*
       // draw EUR value of transaction
