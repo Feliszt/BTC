@@ -70,7 +70,7 @@ void oscEvent(OscMessage theOscMessage) {
     //transValueBTC = theOscMessage.get(0).floatValue();
     if (theOscMessage.arguments().length == 3) {      
       // create transaction element and add it
-      Transaction newTrans = new Transaction(theOscMessage.get(0).stringValue(), theOscMessage.get(1).stringValue(), theOscMessage.get(2).stringValue());
+      Transaction newTrans = new Transaction(theOscMessage.get(0).stringValue(), "lol", theOscMessage.get(2).stringValue());
       liveSect.addTrans(newTrans);
     } else {
       print("TRANSACTION OSC MESSAGE DOES NOT HAVE 3 ARGUMENTS");

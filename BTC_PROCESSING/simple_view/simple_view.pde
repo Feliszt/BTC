@@ -66,7 +66,7 @@ void oscEvent(OscMessage theOscMessage) {
     // get value of transaction
     //transValueBTC = theOscMessage.get(0).floatValue();    
     // create transaction element and add it
-    Transaction newTrans = new Transaction(theOscMessage.get(0).stringValue(), theOscMessage.get(1).stringValue());
+    Transaction newTrans = new Transaction(theOscMessage.get(0).stringValue(), theOscMessage.get(2).stringValue());
     liveSect.addTrans(newTrans);
   }
 }
@@ -76,11 +76,11 @@ void setupCanvas() {
   fonts.put("sanFranReg", createFont("fonts/SanFranciscoText-Regular.otf", map(height, 0, 1080, 12, 20)));
   fonts.put("sanFranHeavy", createFont("fonts/SanFranciscoText-Heavy.otf", map(height, 0, 1080, 12, 56)));
   fonts.put("sanFranSemiBold", createFont("fonts/SanFranciscoText-Semibold.otf", map(height, 0, 1080, 0, 24)));
-  fonts.put("monoSpaceBold", createFont("fonts/DroidSansMono.ttf", map(height, 0, 1080, 12, 22)));
-  fonts.put("monoSpace", createFont("fonts/DroidSansMono.ttf", map(height, 0, 1080, 12, 22)));
+  fonts.put("monoSpace", createFont("fonts/monaco.ttf", map(height, 0, 1080, 12, 22)));
+  fonts.put("monoSpaceBold", createFont("fonts/NotoMono-Regular.ttf", map(height, 0, 1080, 12, 22)));
 
   // set palette
-  palette.put("header", #242D4A);
+  palette.put("header", #010101);        
   palette.put("background", #010101);
   palette.put("box", #1A1A1A);
   palette.put("text", #F2F2F2);

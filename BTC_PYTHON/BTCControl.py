@@ -99,7 +99,9 @@ def toggle_motor(unused_addr):
 # sends a message to arduino that tells the vibration motor to spin 50 steps
 def launch_vibration(unused_addr) :
     global motorSpeedMin
-    sendMotorCommand("0-" + str(motorSpeedMin) + "-50>")
+    motorStr = "0-" + str(motorSpeedMin) + "-275>"
+    log("Sending " + motorStr + " to vibration motor.")
+    sendMotorCommand(motorStr)
 
 # launch osc server
 def connect_oscServer(ip, port):
@@ -165,6 +167,7 @@ def process_trans(data):
 
     # init variables
     global counterTrans
+    global counterVibration
     counterTrans += 1
     value = 0
 
@@ -186,21 +189,29 @@ def process_trans(data):
     global curveD
     global maxStep
     global counterStep
-    global coinReleased0
-    global prevCoinReleased0
+    global coinReleased
+    global prevCoinReleased
     global freqReleased
     numSteps = curveD + (curveA - curveD) / (1 + (valueBTCfloat / curveC) ** curveB )
     numSteps = int(numSteps)
     numSteps = clamp(numSteps, 1, maxStep)
     counterStep += numSteps
-    coinsReleased = int(counterStep / 177)
-    coinReleased0 = coinsReleased % freqReleased == 0
-    if(coinReleased0 and not prevCoinReleased0):
-        vibrationMotorStep = 300
-        freqReleased = random.randint(5, 10)
+    coinReleased = int(counterStep / 178)
+
+    if(coinReleased != prevCoinReleased):
+        counterVibration += 1
+
+    if(counterVibration == freqReleased):
+        vibrationMotorStep = 0
+        #vibrationMotorStep = 0
+        counterVibration = 0
+        freqReleased = random.randint(6, 8)
+        #freqReleased = 7
+        #freqReleased = 1
     else :
         vibrationMotorStep = 0
-    prevCoinReleased0 = coinReleased0
+        #vibrationMotorStep = 0
+    prevCoinReleased = coinReleased
 
     # map to motor speed
     motorSpeed = int(mapValue(numSteps, 1, maxStep, motorSpeedMin, motorSpeedMax))
@@ -233,7 +244,9 @@ def process_trans(data):
     + valueBTCstr + '\t'
     + str(threading.activeCount()) + '\t'
     + serialPortMessage + '\t'
-    + str(coinsReleased) + '\t'
+    + str(coinReleased) + '\t'
+    + str(freqReleased) + '\t'
+    + str(counterVibration) + '\t'
     )
 
 # happens everytime websocket receives something
@@ -277,6 +290,12 @@ def on_open(ws):
     ws.send('{"op" : "blocks_sub"}')
     log("Websocket opened.")
 
+def vibrationTime():
+    while True:
+        currentSec = time.time()
+        if(currentSec - previousSec):
+            pass
+
 ## ------ MAIN PROGRAM
 # start log
 with open('data/log.txt', 'a') as f :
@@ -286,25 +305,26 @@ with open('data/log.txt', 'a') as f :
 counterTrans = 0
 counterStep = 0
 counterBytes = 0
-freqReleased = random.randint(1, 10)
+counterVibration = 0
+freqReleased = 1
 
 # set locale
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 
 # vibration motor variables
 toggleMotor = True
-coinReleased0 = False
-prevCoinReleased0 = False
+coinReleased = 0
+prevCoinReleased = 0
 
 # motor variables
-maxStep = 20
+maxStep = 50
 motorSpeedMax = 1000     # micro seconds
 motorSpeedMin = 2000    # micro seconds
 
 # step calculation variables
 curveA = -0.096167 * maxStep
 curveB = 0.4952864
-curveC = 0.06150178
+curveC = 0.0615017815
 curveD = 1.00857 * maxStep
 
 # connect serial port
@@ -312,7 +332,7 @@ ser = connect_serial(9600)
 time.sleep(0.5)
 
 # launch osc client
-oscClient = connect_oscClient("192.168.0.12", 8000)
+oscClient = connect_oscClient("127.0.0.1", 8000)
 
 # launch websocket
 #websocket.enableTrace(True)
@@ -325,6 +345,6 @@ ws = websocket.WebSocketApp("wss://ws.blockchain.info/inv",
 launch_websocket_thread([])
 
 # launch osc server
-oscServer = connect_oscServer("192.168.0.15", 9000)
+oscServer = connect_oscServer("192.168.0.214", 9000)
 oscServer.serve_forever()
 ## -----------------------

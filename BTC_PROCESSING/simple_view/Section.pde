@@ -24,7 +24,7 @@ class Section {
     txtCol = palette.get("text");
 
     fonts = _fonts;
-    titleFont = fonts.get("sanFranSemiBold");    
+    titleFont = fonts.get("monoSpace");    
     textFont(titleFont);
     textSize(mainTitleSz);
     
@@ -34,7 +34,7 @@ class Section {
     contentH = sectionH - (startContentY - sectionY) - borderH;
     
     mainTitleSz = (int) map(height, 100, 1080, 5, 14);
-    regTxtSz = (int) map(height, 100, 1080, 4, 24); 
+    regTxtSz = (int) map(height, 100, 1080, 4, 48); 
   }
   
   void show() {

@@ -53,7 +53,7 @@ class LiveSection extends Section {
     posY += 1.5 * textAscent();
     for(int i = trans.size() - 1; i >= 0 ; i--) {
      if(posY < startContentY + contentH) {  
-       trans.get(i).show(startContentX, posY, startContentX + contentW / 2 + secondColumnW, posX + thirdColumnW, contentCol, timeCol, bgCol, monoSpaceBold, monoSpace);
+       trans.get(i).show(startContentX, posY, startContentX + contentW / 2 + secondColumnW, posX + thirdColumnW, contentCol, timeCol, bgCol, monoSpace, monoSpace);
        posY += 1.5 * textAscent();
      }     
     }
