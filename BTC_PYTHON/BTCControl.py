@@ -46,7 +46,7 @@ def sendMotorCommand(message) :
     global toggleMotor
     global ser
     global numBytes
-    if(toggleMotor) :
+    if(ser != None and toggleMotor) :
         if ser.in_waiting > 1000 :
             ser.reset_input_buffer()
         try :
@@ -93,14 +93,14 @@ def stop_websocket(unused_addr):
 def toggle_motor(unused_addr):
     global toggleMotor
     toggleMotor = not toggleMotor
-    
+
 # function that answers to /incrementFreq OSC address
 # adds 1 to freqReleased
 def increment_freq(unused_addr):
     global freqReleased
     freqReleased = freqReleased + 1
     log("increment_freq : freqReleased = " + str(freqReleased))
-    
+
 # function that answers to /decrementFreq OSC address
 # removes 1 to freqReleased
 def decrement_freq(unused_addr):
@@ -356,6 +356,6 @@ ws = websocket.WebSocketApp("wss://ws.blockchain.info/inv",
 launch_websocket_thread([])
 
 # launch osc server
-oscServer = connect_oscServer("192.168.0.90", 9000)
-oscServer.serve_forever()
+#oscServer = connect_oscServer("192.168.0.90", 9000)
+#oscServer.serve_forever()
 ## -----------------------
